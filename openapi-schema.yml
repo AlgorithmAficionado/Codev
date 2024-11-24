@@ -2,4 +2,166 @@ openapi: 3.0.2
 info:
   title: ''
   version: ''
-paths: {}
+paths:
+  /api/DiscordBot/api/chat/:
+    get:
+      operationId: listChats
+      description: ''
+      parameters: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+          description: ''
+      tags:
+      - api
+    post:
+      operationId: createChats
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Chat'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+          description: ''
+      tags:
+      - api
+  /api/DiscordBot/api/chat/{id}/:
+    get:
+      operationId: retrieveChats
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this chats.
+        schema:
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+          description: ''
+      tags:
+      - api
+    put:
+      operationId: updateChats
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this chats.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Chat'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+          description: ''
+      tags:
+      - api
+    patch:
+      operationId: partialUpdateChats
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this chats.
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Chat'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+          description: ''
+      tags:
+      - api
+    delete:
+      operationId: destroyChats
+      description: ''
+      parameters:
+      - name: id
+        in: path
+        required: true
+        description: A unique integer value identifying this chats.
+        schema:
+          type: string
+      responses:
+        '204':
+          description: ''
+      tags:
+      - api
+  /api/DiscordBot/api/chat/generate_response/:
+    post:
+      operationId: generateResponseChats
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Chat'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+          description: ''
+      tags:
+      - api
+components:
+  schemas:
+    Chat:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        query:
+          type: string
+        context:
+          type: string
+        response:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - query
+      - context
+      - response

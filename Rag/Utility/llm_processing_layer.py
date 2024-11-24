@@ -1,7 +1,7 @@
 # llm_processing.py
 import os
 from groq import Groq
-from input_layer import prepare_query
+from .input_layer import prepare_query
 
 def generate_response_with_groq(query, context=None, model=None):
     """

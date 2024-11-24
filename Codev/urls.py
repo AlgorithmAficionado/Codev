@@ -9,7 +9,7 @@ from django.conf.urls.static import static
 # Create a custom namespace for your API URLs to avoid conflicts with Django's authentication URLs.
 api_urlpatterns = [
     path('DiscordBot/', include('DiscordBot.urls')),
-    path('Rag/', include('Rag.urls')),
+    # path('Rag/', include('Rag.urls')),
     path('VscodeExtension/', include('VscodeExtension.urls')),
 ]
 
