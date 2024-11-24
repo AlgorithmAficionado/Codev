@@ -1,64 +1,88 @@
 # Codev Backend (Hackathon Prototype)
 
-The backend service for **Codev**, an AI-powered developer teammate designed to integrate with Discord and VS Code. This project is a work-in-progress prototype, developed as part of a hackathon to demonstrate the core functionality and potential of Codev.
+The backend service for **Codev**, an AI-powered developer teammate that enhances software development workflows by integrating with Discord and a planned VS Code extension. This hackathon prototype demonstrates key features, including AI-powered code generation and debugging, but is not yet fully integrated with the frontend.
 
 ---
 
-## Overview
+## Project Status: 50% Complete
 
-**Codev** envisions an AI-powered virtual teammate that collaborates seamlessly with developers in real-time. This backend prototype lays the groundwork for the system by handling basic API requests, Discord bot interactions, and integration with an AI-powered code assistant.
-
----
-
-## Current Features (50% Complete)
-
-As a hackathon project, the backend currently supports the following features:
-**AI-Powered Assistance (Limited)**:
-   - Processes basic code generation and debugging queries using AI.
-   - Provides initial proof-of-concept for integrating AI with developer tools.
-
-**Frontend Communication**:
-   - Limited API support for synchronizing with the [Codev Frontend](https://github.com/iamnirmank/Codev-Frontend).
-
-**Scalable Architecture**:
-   - Early-stage implementation of backend services to demonstrate scalability and modular design.
+This project was developed under tight time constraints during a hackathon. While key backend functionalities have been implemented, the integration with the frontend and some advanced features remain incomplete.
 
 ---
 
-## Pending Features
+## Key Features (Backend)
 
-The following features are part of the original vision but remain incomplete due to time constraints during the hackathon:
+1. **AI-Powered Assistance**:
+   - Processes user queries to generate relevant responses using Groq and LangChain.
+   - Includes support for contextual code generation and debugging.
 
-- **Advanced AI Query Handling**:
-  - Full-scale support for debugging, analysis, and multi-language code generation.
-- **Comprehensive Discord Bot Commands**:
-  - Integration of advanced collaborative tools, like task management and project updates.
-- **VS Code Extension Support**:
-  - Real-time integration with VS Code for debugging and code analysis.
-- **User Authentication and Management**:
-  - Implementation of secure login, registration, and session management.
-- **Database Integration**:
-  - Persistent data storage for user settings, project metadata, and bot configurations.
+2. **Chat History and Context**:
+   - Stores user queries, responses, and context in a database.
+   - Retrieves relevant chat history and document context for enhanced responses.
+
+3. **Document Chunking and Retrieval**:
+   - Implements text chunking with overlap for preserving context.
+   - Uses FAISS indexing for efficient similarity search and context retrieval.
+
+4. **API for Frontend Integration**:
+   - Provides endpoints for generating responses and retrieving chat history.
+   - Ready for integration with the [Codev Frontend](https://github.com/iamnirmank/Codev-Frontend).
+
+5. **Scalable and Modular Design**:
+   - Designed to allow easy addition of new features and integration points.
 
 ---
 
-## Project Structure
+## Completed Work
 
-The backend is structured to showcase the core concepts, with modular components for Discord integration, AI processing, and API services. Though incomplete, it highlights the potential for a fully-functional developer assistant.
+- **Backend Logic**:
+  - Implemented core functionality for handling chat queries and generating AI responses.
+  - Developed utility modules for document processing, FAISS indexing, and context retrieval.
+
+- **AI Integration**:
+  - Utilized Groq for AI-powered response generation.
+  - Leveraged LangChain's prompt templates for query and context preparation.
+
+- **API Endpoints**:
+  - Created an endpoint for generating responses based on user queries.
+  - Implemented chat history management and context extraction.
+
+- **Frontend Prototype**:
+  - [Frontend repository](https://github.com/iamnirmank/Codev-Frontend) completed but not yet integrated with the backend.
 
 ---
 
-## Vision and Future Plans
+## Pending Work
 
-Despite being only 50% complete, **Codev** represents a bold step toward revolutionizing developer collaboration and productivity. Future work will focus on completing the remaining features, optimizing performance, and refining the user experience.
+1. **Frontend-Backend Integration**:
+   - Connect the API endpoints with the frontend for a unified user experience.
 
-The ultimate goal is to create a seamless, intelligent teammate that supports developers in every aspect of their workflow—from brainstorming to debugging.
+2. **Advanced AI Features**:
+   - Enhance query handling with additional contextual understanding.
+   - Add multi-turn conversation support.
+
+3. **VS Code Extension**:
+   - Integrate backend APIs with a planned VS Code extension for real-time code assistance.
+
+4. **Authentication and User Management**:
+   - Implement user authentication and session handling.
+
+5. **Database Enhancements**:
+   - Refine database schema for scalability and advanced analytics.
+
+---
+
+## Vision
+
+Codev aims to transform the way developers collaborate by introducing an AI-powered teammate. By integrating with Discord and development tools like VS Code, Codev will provide intelligent assistance throughout the development process, from brainstorming to debugging.
+
+Though currently in its prototype phase, Codev has laid the foundation for an innovative and scalable solution. We look forward to completing and refining the project to achieve its full potential.
 
 ---
 
 ## Acknowledgments
 
-This project was built as part of a hackathon under time constraints. We are proud of what we've accomplished so far and are excited to continue its development in the future.
+This project was built during a hackathon under time constraints. We’re proud of the progress made and excited to continue developing Codev beyond the hackathon.
 
 ---
 
