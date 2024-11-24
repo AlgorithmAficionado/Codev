@@ -1,131 +1,148 @@
-from astrapy import DataAPIClient
+import numpy as np
+from sentence_transformers import SentenceTransformer
+import faiss
 
 
-def initialize_astra_client(api_endpoint, token):
+class DocumentChunk:
     """
-    Initialize Astra DB client.
+    Represents a chunk of a document with metadata, text, and embedding.
+    """
+    def __init__(self, id_, chunk_id, text='', embedding=None, metadata=None):
+        self.id_ = id_
+        self.chunk_id = chunk_id
+        self.text = text
+        self.embedding = embedding
+        self.metadata = metadata or {}
 
+# Initialize the SentenceTransformer model globally
+model = SentenceTransformer('all-MiniLM-L6-v2')
+
+
+def chunk_text_with_overlap(text, chunk_size=100, overlap=20):
+    """
+    Splits text into overlapping chunks for better context preservation.
     Args:
-        api_endpoint (str): The Astra DB API endpoint.
-        token (str): The token for authentication.
-
+        text (str): Input text to be chunked.
+        chunk_size (int): Number of words per chunk.
+        overlap (int): Number of overlapping words between consecutive chunks.
     Returns:
-        DataAPIClient: The initialized Astra DB client.
+        list: List of overlapping chunks.
     """
-    try:
-        client = DataAPIClient(token)
-        db = client.get_database_by_api_endpoint(api_endpoint)
-        print(f"Connected to Astra DB.")
-        return db
-    except Exception as e:
-        print(f"Error initializing Astra client: {e}")
-        return None
+    words = text.split()
+    return [' '.join(words[i:i + chunk_size]) for i in range(0, len(words), chunk_size - overlap)]
 
 
-def check_and_create_table(db, keyspace, table_name, vector_dimension=768):
+def process_documents(documents):
     """
-    Check if a collection (table) exists in Astra DB. If it doesn't exist, create it.
-
+    Process documents into chunks with embeddings.
     Args:
-        db (DataAPIClient): Initialized Astra DB client.
-        keyspace (str): The keyspace where the table resides or will be created.
-        table_name (str): The name of the table to check/create.
-        vector_dimension (int): Dimension of the vector column (default: 768).
-
+        documents (list of str): List of documents.
     Returns:
-        str: Success message or error details.
+        list: List of DocumentChunk objects.
     """
-    try:
-        # Check if the table exists
-        check_query = f"""
-        SELECT table_name
-        FROM system_schema.tables
-        WHERE keyspace_name = '{keyspace}' AND table_name = '{table_name}';
-        """
-        existing_tables = db.cql(check_query)
-
-        if existing_tables:
-            print(f"Table '{table_name}' already exists in keyspace '{keyspace}'.")
-            return f"Table '{table_name}' already exists in keyspace '{keyspace}'."
-
-        # Create the table if it does not exist
-        create_table_query = f"""
-        CREATE TABLE {keyspace}.{table_name} (
-            id UUID PRIMARY KEY,
-            document TEXT,
-            metadata MAP<TEXT, TEXT>,
-            embedding VECTOR<FLOAT, {vector_dimension}>
-        );
-        """
-        db.cql(create_table_query)
-        print(f"Table '{table_name}' successfully created in keyspace '{keyspace}'.")
-        return f"Table '{table_name}' successfully created in keyspace '{keyspace}'."
-
-    except Exception as e:
-        return f"Error checking or creating table: {e}"
+    chunks = []
+    for i, text in enumerate(documents):
+        text_chunks = chunk_text_with_overlap(text)
+        for j, chunk in enumerate(text_chunks):
+            chunks.append(DocumentChunk(id_=f"{i}_{j}", chunk_id=j, text=chunk))
+    return chunks
 
 
-def add_or_update_documents(db, keyspace, table_name, documents, metadata_list=None):
+def compute_embeddings(chunks):
     """
-    Add or update documents in Astra DB.
-
+    Compute embeddings for all chunks and assign to chunks.
     Args:
-        db (DataAPIClient): Initialized Astra DB client.
-        keyspace (str): The keyspace where the table resides.
-        table_name (str): The name of the table.
-        documents (list): List of documents to store.
-        metadata_list (list of dict, optional): Metadata for each document.
-
+        chunks (list of DocumentChunk): List of DocumentChunk objects.
     Returns:
-        str: Success message or error details.
+        np.ndarray: Array of embeddings.
     """
-    if metadata_list is None:
-        metadata_list = [{}] * len(documents)
-
-    try:
-        # Insert or update each document
-        for doc, metadata in zip(documents, metadata_list):
-            # Replace or insert the document into the table
-            upsert_query = f"""
-            INSERT INTO {keyspace}.{table_name} (id, document, metadata, embedding)
-            VALUES (now(), %s, %s, %s);
-            """
-            embedding = [0.0] * 768  # Placeholder for embeddings
-            db.cql(upsert_query, [doc, metadata, embedding])
-            print(f"Document added or updated: {doc[:50]}...")
-        return "Documents added or updated successfully."
-    except Exception as e:
-        return f"Error adding or updating documents: {e}"
+    texts = [chunk.text for chunk in chunks]
+    embeddings = model.encode(texts, normalize_embeddings=True)
+    for chunk, embedding in zip(chunks, embeddings):
+        chunk.embedding = embedding
+    return np.array(embeddings)
 
 
-def search_documents(db, keyspace, table_name, user_query, top_k=3):
+def create_faiss_index(embeddings):
     """
-    Perform a vector search for context.
-
+    Create a FAISS index from embeddings.
     Args:
-        db (DataAPIClient): Initialized Astra DB client.
-        keyspace (str): The keyspace where the table resides.
-        table_name (str): The name of the table.
-        user_query (str): The query from the user to search for relevant context.
+        embeddings (np.ndarray): Array of embeddings.
+    Returns:
+        faiss.IndexFlatL2: FAISS index.
+    """
+    dimension = embeddings.shape[1]
+    index = faiss.IndexFlatL2(dimension)
+    index.add(embeddings)
+    return index
+
+
+def search_index(index, query, chunks, top_k=5):
+    """
+    Search the FAISS index for the most relevant chunks to the query.
+    Args:
+        index (faiss.IndexFlatL2): FAISS index.
+        query (str): Query string.
+        chunks (list of DocumentChunk): List of DocumentChunk objects.
         top_k (int): Number of top results to retrieve.
-
     Returns:
-        list: Relevant context documents retrieved based on the query.
+        list: List of relevant chunks with scores.
     """
-    try:
-        # Perform vector search
-        search_query = f"""
-        SELECT * FROM {keyspace}.{table_name}
-        WHERE embedding ANN OF %s LIMIT {top_k};
-        """
-        search_results = db.cql(search_query, [user_query])
+    query_embedding = model.encode([query], normalize_embeddings=True)
+    distances, indices = index.search(query_embedding, top_k)
+    results = []
+    for dist, idx in zip(distances[0], indices[0]):
+        if idx != -1:  # Check for valid index
+            results.append({
+                "text": chunks[idx].text,
+                "metadata": chunks[idx].metadata,
+                "distance": dist
+            })
+    return results
 
-        # Collect relevant context from search results
-        relevant_context = []
-        for result in search_results:
-            relevant_context.append(result["document"])
 
-        return relevant_context
-    except Exception as e:
-        print(f"Error during vector search: {e}")
-        return []
+def get_relevant_context(documents, query, chunk_size=100, overlap=20, top_k=5):
+    """
+    Main function to process documents, build FAISS index, and retrieve relevant context for a query.
+    Args:
+        documents (list of str): List of documents.
+        query (str): Query string.
+        chunk_size (int): Number of words per chunk.
+        overlap (int): Number of overlapping words between chunks.
+        top_k (int): Number of top results to retrieve.
+    Returns:
+        list: List of relevant chunks with scores.
+    """
+    # Step 1: Process documents into chunks
+    chunks = process_documents(documents)
+
+    # Step 2: Compute embeddings for the chunks
+    embeddings = compute_embeddings(chunks)
+
+    # Step 3: Create FAISS index
+    index = create_faiss_index(embeddings)
+
+    # Step 4: Perform search on the query
+    results = search_index(index, query, chunks, top_k)
+
+    return results
+
+# if __name__ == "__main__":
+#     # Example documents
+#     documents = [
+#         "This is a document about machine learning and artificial intelligence.",
+#         "Deep learning is a subset of machine learning focused on neural networks.",
+#         "Transformers have revolutionized natural language processing.",
+#     ]
+
+#     # Query to search for
+#     query = "Tell me about neural networks."
+
+#     # Get relevant context
+#     relevant_context = get_relevant_context(documents, query)
+
+#     # Display results
+#     print("Relevant Context:")
+#     for idx, result in enumerate(relevant_context, 1):
+#         print(f"{idx}. Text: {result['text']}")
+#         print(f"   Distance: {result['distance']}")
